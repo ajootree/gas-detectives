@@ -1,12 +1,5 @@
-export const SAVE_KEY = 'gas-pang.slingshot.v1';
+// 기존 퀴즈의 24개 상황과 정답 관계를 재사용합니다.
 export const CATEGORIES = ['TU','TD','PU','PD'];
-export const STAGES = [
-  { name:'상황 탐정', short:'온도? 압력?', desc:'어떤 것과 관련된 상황인지 찾아요.', badge:'🔍', goal:10 },
-  { name:'변화 탐정', short:'높아져? 낮아져?', desc:'상황을 읽고 변화의 방향을 찾아요.', badge:'🧭', goal:12 },
-  { name:'부피 전문가', short:'늘어나? 줄어들어?', desc:'온도·압력과 부피의 관계를 익혀요.', badge:'🎈', goal:12 },
-  { name:'기체 탐정', short:'세 번 이어 쏘기', desc:'상황부터 기체의 부피까지 연결해요.', badge:'🏅', goal:12 },
-  { name:'끝없는 탐험', short:'계속 쏘고, 와르르!', desc:'다섯 상황씩, 원하는 만큼 도전해요.', badge:'🏰', goal:5 },
-];
 const row = (id, cat, text, object, setting) => ({id,cat,text,object,setting});
 export const BANK = [
   row('t01','TU','풍선을 차가운 복도에서 따뜻한 교실로 옮겼어요.','balloon','warm'),
@@ -56,54 +49,4 @@ export function question(stage,s,part=0) {
   const options=type==='kind'?['온도','압력']:type==='direction'?['높아진다','낮아진다']:['늘어난다','줄어든다'];
   const prompt=type==='kind'?'무엇과 관련된 상황일까요?':type==='direction'?`${c.kind}가 어떻게 달라질까요?`:'기체의 부피는 어떻게 될까요?';
   return {type,options,answer:c[type],prompt};
-}
-export function initialState() {
-  return {version:1,unlocked:0,badges:[false,false,false,false],total:0,stars:0,settings:{sound:true,motion:true},
-    stats:STAGES.map(()=>({history:[],total:0,solo:0})),mastery:Object.fromEntries(CATEGORIES.map(k=>[k,0])),session:null};
-}
-export function sanitize(value) {
-  const blank=initialState();
-  if(!value||value.version!==1)return blank;
-  blank.unlocked=Math.min(4,Math.max(0,Math.floor(Number(value.unlocked)||0)));
-  blank.badges=blank.badges.map((_,i)=>value.badges?.[i]===true);
-  blank.total=Math.max(0,Math.floor(Number(value.total)||0));
-  blank.stars=Math.max(0,Math.floor(Number(value.stars)||0));
-  blank.settings.sound=value.settings?.sound!==false;
-  blank.settings.motion=value.settings?.motion!==false;
-  blank.stats=blank.stats.map((stat,i)=>({...stat,total:Math.max(0,Number(value.stats?.[i]?.total)||0),solo:Math.max(0,Number(value.stats?.[i]?.solo)||0),history:(Array.isArray(value.stats?.[i]?.history)?value.stats[i].history:[]).filter(h=>CATEGORIES.includes(h.cat)&&typeof h.solo==='boolean').slice(-30)}));
-  CATEGORIES.forEach(k=>blank.mastery[k]=Math.max(0,Math.floor(Number(value.mastery?.[k])||0)));
-  const s=value.session;
-  if(s&&Number.isInteger(s.stage)&&s.stage>=0&&s.stage<=blank.unlocked&&BANK.some(x=>x.id===s.id)) {
-    blank.session={stage:s.stage,id:s.id,part:[0,1,2].includes(s.part)?s.part:0,first:s.first!==false,
-      mode:s.mode==='challenge'?'challenge':'practice',trial:Array.isArray(s.trial)?s.trial.filter(v=>typeof v==='boolean').slice(0,4):[],
-      trialCats:Array.isArray(s.trialCats)?s.trialCats.filter(c=>CATEGORIES.includes(c)).slice(0,4):[],
-      cycle:Math.max(0,Math.floor(Number(s.cycle)||0)),round:Array.isArray(s.round)?s.round.filter(v=>typeof v==='boolean').slice(0,4):[],
-      seen:Array.isArray(s.seen)?s.seen.filter(id=>BANK.some(x=>x.id===id)).slice(-5):[],review:[],};
-  }
-  return blank;
-}
-export function record(state,stage,cat,solo) {
-  const stat=state.stats[stage];
-  stat.total++; if(solo)stat.solo++;
-  stat.history.push({cat,solo});stat.history=stat.history.slice(-30);
-  state.total++;state.stars++;
-  if(stage>=3&&solo) state.mastery[cat]++;
-}
-export function ready(state,stage) {
-  if(stage>=4)return false;
-  const stats=state.stats[stage], recent=stats.history.slice(-10);
-  if(stats.total<STAGES[stage].goal||recent.length<10||recent.filter(h=>h.solo).length<8)return false;
-  const good=recent.filter(h=>h.solo);
-  return stage===0?['T','P'].every(k=>good.filter(h=>h.cat[0]===k).length>=2):CATEGORIES.every(k=>good.some(h=>h.cat===k));
-}
-export function nextCategory(stage,cycle,mode,trialLength=0) {
-  if(mode==='challenge')return CATEGORIES[trialLength%4];
-  if((stage===1||stage===2)&&cycle<4)return ['TU','TD'][cycle%2];
-  if((stage===1||stage===2)&&cycle<8)return ['PU','PD'][cycle%2];
-  return CATEGORIES[cycle%4];
-}
-export function pickScenario(cat,seen=[],random=Math.random) {
-  let pool=BANK.filter(x=>x.cat===cat&&!seen.includes(x.id));
-  if(!pool.length)pool=BANK.filter(x=>x.cat===cat);
-  return pool[Math.floor(random()*pool.length)];
 }
