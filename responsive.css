@@ -24,6 +24,7 @@ body{overflow:hidden}
 .dialog-actions{flex-wrap:wrap}.dialog label{font-size:21px}
 .rank-table{font-size:22px}.rank-tabs{flex-wrap:wrap}.menu-actions{display:grid;gap:13px}
 .menu-actions button{min-height:54px;font-size:23px}
+.lobby-actions{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;grid-column:1/-1;grid-row:4}.saved-progress{display:block;font-size:19px;color:#6f8292;margin-top:6px}
 .dialog-review{display:flex;flex-direction:column;overflow:hidden}.dialog-review>h2,.dialog-review>.review-prompt,.dialog-review>.review-answers,.dialog-review>.review-note{flex:none}.review-reading{min-height:0;overflow:auto;overscroll-behavior:contain}
 
 /* Use the width of a short landscape screen instead of shrinking its text. */
@@ -60,7 +61,9 @@ body{overflow:hidden}
   .chain{font-size:19px;min-height:42px;gap:4px;flex-wrap:nowrap}.blank{min-width:0;padding:6px}
   .timer{min-width:80px;font-size:25px;padding:6px 10px}
   .header:has(#clock) .title{display:none}.header:has(#clock) .score{margin-left:0;margin-right:auto}.header:has(#clock){justify-content:space-between}
+  .header:has(#pause-marathon) .title{display:none}.header:has(#pause-marathon) .score{margin-left:0;margin-right:auto}.header:has(#pause-marathon){justify-content:space-between}#pause-marathon{font-size:20px}
   .lobby{gap:16px}.lobby-title{font-size:46px}.lobby-info{font-size:26px;line-height:1.45}.personal-best{font-size:21px;padding:9px 18px}.personal-best strong{font-size:26px}
+  .lobby-actions{flex-wrap:nowrap;max-width:100%;gap:10px}.lobby-actions .start-button{font-size:clamp(26px,7.5vw,31px);padding-left:20px;padding-right:20px}.lobby-actions>.small-button{white-space:nowrap;flex-shrink:0}
   .nickname{font-size:21px;gap:9px;flex-wrap:wrap}.start-button{font-size:31px;padding:13px 27px;min-height:62px}
   .backdrop{padding:12px}.dialog{padding:23px 20px;max-height:calc(100dvh - 24px);border-radius:23px}
   .dialog h2{font-size:30px}.dialog p{font-size:22px;line-height:1.5}.explanation{padding:13px;margin:13px 0}.explanation strong{font-size:25px;line-height:1.4}
@@ -108,6 +111,7 @@ body{overflow:hidden}
 @media(max-width:700px) and (min-height:481px){.lobby>.context{display:none}.lobby{gap:11px}.nickname-label{display:none}.nickname{flex-wrap:nowrap;max-width:100%;font-size:21px}.nickname strong{font-size:21px}.nickname .small-button{flex-shrink:0}.lobby-info{max-width:100%}}
 @media(max-width:700px) and (max-height:640px) and (min-height:481px){.lobby{gap:8px}.lobby-info{font-size:24px}}
 @media(min-width:480px) and (max-height:480px){.lobby>.context{display:none}.question-area.lobby{grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);grid-template-rows:auto auto auto;gap:8px 18px}.lobby-title,.personal-best{grid-row:1}.lobby-info,.nickname{grid-row:2}.start-button{grid-row:3}.nickname-label{display:none}.nickname{gap:6px}.nickname strong{font-size:20px}#show-result{grid-row:4}}
+@media(min-width:480px) and (max-height:480px){.lobby-actions{grid-row:3}}
 #app{padding-left:max(var(--screen-side,24px),env(safe-area-inset-left));padding-right:max(var(--screen-side,24px),env(safe-area-inset-right));padding-top:max(var(--screen-top,16px),env(safe-area-inset-top));padding-bottom:max(var(--screen-bottom,16px),env(safe-area-inset-bottom))}
 @media(min-width:701px) and (max-height:720px){#app{--screen-side:22px;--screen-top:12px;--screen-bottom:12px}}
 @media(max-width:700px){#app{--screen-side:12px;--screen-top:10px;--screen-bottom:10px}}

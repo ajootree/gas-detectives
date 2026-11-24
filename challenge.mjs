@@ -1,4 +1,4 @@
-import {pickScenario} from './data.mjs?v=quiz-r3';
+import {BANK,pickScenario} from './data.mjs?v=quiz-r5';
 export const PASS_SCORE=70;
 export const PASS_ACCURACY=.8;
 export const RUN_TYPES=['gate60','marathon','sprint120'];
@@ -8,6 +8,7 @@ export function augment(s,raw={}){
   s.activity=['practice',...RUN_TYPES].includes(raw.activity)?raw.activity:'practice';
   s.bests={gate60:[0,1,2].map(i=>Math.max(0,Number(raw.bests?.gate60?.[i])||0)),marathon:Math.max(0,Number(raw.bests?.marathon)||0),sprint120:Math.max(0,Number(raw.bests?.sprint120)||0)};
   s.nickname=typeof raw.nickname==='string'?raw.nickname.slice(0,16):'';
+  s.savedMarathon=readMarathonSave(raw.savedMarathon);
   s.run=null;
   const r=raw.run;
   if(r&&RUN_TYPES.includes(r.type)&&Number.isInteger(r.stage)&&r.stage>=0&&r.stage<=s.unlocked&&r.stage<4&&Number.isFinite(r.startedAt)&&r.startedAt>0){
@@ -19,6 +20,24 @@ export function augment(s,raw={}){
   return s;
 }
 export function activeRun(s){return !!s.run&&!s.run.ended;}
+function readMarathonSave(value){
+  if(!value||value.run?.type!=='marathon'||value.run.ended||value.run.stage!==3||!Number.isFinite(value.run.startedAt)||!BANK.some(x=>x.id===value.current?.id)||![0,1,2].includes(value.current?.part))return null;
+  const run=value.run;
+  if(!Number.isInteger(run.completed)||run.completed<0||run.score!==run.completed*30)return null;
+  return {run:{...run,deadline:null,reviewStartedAt:null,pausedMs:0,reviewed:0},current:{...value.current},seen:Array.isArray(value.seen)?value.seen.filter(id=>BANK.some(x=>x.id===id)).slice(-5):[]};
+}
+export function saveMarathon(s){
+  if(s.run?.type!=='marathon'||s.run.ended)return false;
+  s.savedMarathon=readMarathonSave({run:s.run,current:s.current,seen:s.seen});return !!s.savedMarathon;
+}
+export function suspendMarathon(s){
+  if(!saveMarathon(s))return false;
+  s.run=null;s.mode=3;s.activity='marathon';s.review=false;s.helped=false;return true;
+}
+export function resumeMarathon(s){
+  const saved=readMarathonSave(s.savedMarathon);if(!saved)return false;
+  s.mode=3;s.activity='marathon';s.run=saved.run;s.current=saved.current;s.seen=saved.seen;s.review=false;s.helped=false;return true;
+}
 export function remaining(s,now=Date.now()){return !s.run||s.run.deadline===null?null:Math.max(0,s.run.deadline-(s.run.reviewStartedAt??now));}
 export function expired(s,now=Date.now()){return activeRun(s)&&s.run.deadline!==null&&s.run.reviewStartedAt==null&&now>=s.run.deadline;}
 export function pickRunQuestion(s,random=Math.random){

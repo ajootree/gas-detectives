@@ -1,4 +1,4 @@
-import {BANK,pickScenario} from './data.mjs?v=quiz-r3';
+import {BANK,pickScenario} from './data.mjs?v=quiz-r5';
 export const KEY='gas-pang.cards.v1';
 export const MODES=['상황 구분','높아짐·낮아짐','부피 변화','랭킹 도전'];
 export function fresh(){return {version:1,points:0,answers:0,solo:0,completed:0,mode:0,cycles:[0,0,0,0],seen:[],current:null,review:false,helped:false};}

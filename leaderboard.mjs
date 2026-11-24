@@ -18,8 +18,9 @@ async function connect(){
 export async function beginOnlineRun(mode,nonce){
   if(!['marathon','sprint120'].includes(mode))throw Error('Invalid ranking mode');
   const {auth,db,dbSDK:f}=await connect(),uid=auth.currentUser.uid;
-  await f.setDoc(f.doc(db,'gasQuizRuns',uid),{mode,nonce,startedAt:f.serverTimestamp()});
-  return {uid,nonce,mode};
+  const runPath=`${mode}_${uid}`;
+  await f.setDoc(f.doc(db,'gasQuizRuns',runPath),{mode,nonce,startedAt:f.serverTimestamp()});
+  return {uid,nonce,mode,runPath};
 }
 export async function submitOnlineRun(online,result,nickname){
   const reviewed=result.reviewed||0;

@@ -1,5 +1,6 @@
 // Prototype access rules for the quiz's anonymous leaderboard.
-// gasQuizRuns/{uid}: mode (ranked enum), nonce (16..64 chars), startedAt (server timestamp).
+// gasQuizRuns/{mode_uid}: mode (ranked enum), nonce (16..64 chars), startedAt (server timestamp).
+// Legacy gasQuizRuns/{uid} remains valid for older app versions.
 // gasQuizScores/{mode_uid}: uid (immutable owner), mode, nonce, nickname (2..16 Korean/digits),
 // score (30*completed-27*reviewed), completed (1..100000), reviewed (0..completed; legacy default 0),
 // elapsedMs (active solving time; positive int), updatedAt (server timestamp).
@@ -10,24 +11,31 @@ service cloud.firestore {
   match /databases/{database}/documents {
     function owner(uid) { return request.auth != null && request.auth.uid == uid; }
     function rankedMode(mode) { return mode in ['marathon','sprint120']; }
-    match /gasQuizRuns/{uid} {
+    match /gasQuizRuns/{runId} {
+      function ownsRun() {
+        return request.auth != null && runId in [request.auth.uid,'marathon_'+request.auth.uid,'sprint120_'+request.auth.uid];
+      }
       function validRun() {
         let d=request.resource.data;
         return d.keys().hasAll(['mode','nonce','startedAt'])
           && d.keys().hasOnly(['mode','nonce','startedAt'])
           && rankedMode(d.mode) && d.nonce is string
+          && (runId == request.auth.uid || runId == d.mode+'_'+request.auth.uid)
           && d.nonce.size() >= 16 && d.nonce.size() <= 64
           && d.startedAt is timestamp && d.startedAt == request.time;
       }
-      allow get: if owner(uid);
+      allow get: if ownsRun();
       allow list: if false;
-      allow create, update: if owner(uid) && validRun();
-      allow delete: if owner(uid);
+      allow create, update: if ownsRun() && validRun();
+      allow delete: if ownsRun();
     }
     match /gasQuizScores/{id} {
       function validRecord() {
         let d=request.resource.data;
-        let run=get(/databases/$(database)/documents/gasQuizRuns/$(request.auth.uid)).data;
+        let currentPath=/databases/$(database)/documents/gasQuizRuns/$(d.mode+'_'+request.auth.uid);
+        let legacyPath=/databases/$(database)/documents/gasQuizRuns/$(request.auth.uid);
+        let useCurrent=exists(currentPath) && get(currentPath).data.nonce == d.nonce;
+        let run=useCurrent?get(currentPath).data:get(legacyPath).data;
         let elapsed=request.time.toMillis()-run.startedAt.toMillis();
         let reviewed=d.get('reviewed',0);
         return d.keys().hasAll(['uid','mode','nonce','nickname','score','completed','elapsedMs','updatedAt'])
