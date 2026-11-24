@@ -1,0 +1,70 @@
+@font-face {
+  font-family: 'Do Hyeon';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(./dohyeon.woff2) format('truetype');
+}
+@font-face {
+  font-family: 'Gaegu';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(./gaegu.woff2) format('truetype');
+}
+@font-face {
+  font-family: 'Gamja Flower';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(./gamjaflower.woff2) format('truetype');
+}
+@font-face {
+  font-family: 'Gowun Batang';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(./gowunbatang.woff2) format('truetype');
+}
+@font-face {
+  font-family: 'Gowun Dodum';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(./gowundodum.woff2) format('truetype');
+}
+@font-face {
+  font-family: 'Hi Melody';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(./himelody.woff2) format('truetype');
+}
+@font-face {
+  font-family: 'Nanum Pen Script';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(./nanumpenscript.woff2) format('truetype');
+}
+@font-face {
+  font-family: 'Poor Story';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(./poorstory.woff2) format('truetype');
+}
+@font-face {
+  font-family: 'Single Day';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(./singleday.woff2) format('truetype');
+}
+@font-face {
+  font-family: 'Sunflower';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url(./sunflower.woff2) format('truetype');
+}

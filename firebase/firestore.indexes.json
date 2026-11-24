@@ -1,0 +1,1 @@
+{"indexes":[{"collectionGroup":"gasQuizScores","queryScope":"COLLECTION","fields":[{"fieldPath":"mode","order":"ASCENDING"},{"fieldPath":"score","order":"DESCENDING"}]}],"fieldOverrides":[]}
