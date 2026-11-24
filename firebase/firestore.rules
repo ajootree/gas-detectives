@@ -1,7 +1,8 @@
 // Prototype access rules for the quiz's anonymous leaderboard.
 // gasQuizRuns/{uid}: mode (ranked enum), nonce (16..64 chars), startedAt (server timestamp).
 // gasQuizScores/{mode_uid}: uid (immutable owner), mode, nonce, nickname (2..16 Korean/digits),
-// score (30*completed), completed (1..100000), elapsedMs (positive int), updatedAt (server timestamp).
+// score (30*completed-27*reviewed), completed (1..100000), reviewed (0..completed; legacy default 0),
+// elapsedMs (active solving time; positive int), updatedAt (server timestamp).
 // Only generated nicknames and scores are public to signed-in guests; no personal profiles.
 // These rules bound submissions and enforce ownership; they do not verify individual answers.
 rules_version = '2';
@@ -28,18 +29,21 @@ service cloud.firestore {
         let d=request.resource.data;
         let run=get(/databases/$(database)/documents/gasQuizRuns/$(request.auth.uid)).data;
         let elapsed=request.time.toMillis()-run.startedAt.toMillis();
+        let reviewed=d.get('reviewed',0);
         return d.keys().hasAll(['uid','mode','nonce','nickname','score','completed','elapsedMs','updatedAt'])
-          && d.keys().hasOnly(['uid','mode','nonce','nickname','score','completed','elapsedMs','updatedAt'])
+          && d.keys().hasOnly(['uid','mode','nonce','nickname','score','completed','reviewed','elapsedMs','updatedAt'])
           && owner(d.uid) && id == d.mode+'_'+d.uid && rankedMode(d.mode)
           && d.mode == run.mode && d.nonce == run.nonce
           && d.nickname is string && d.nickname.size() >= 2 && d.nickname.size() <= 16
           && d.nickname.matches('^[가-힣0-9]+$')
-          && d.score is int && d.completed is int && d.score == d.completed*30
+          && reviewed is int && reviewed >= 0 && reviewed <= d.completed
+          && (d.mode != 'marathon' || reviewed == 0)
+          && d.score is int && d.completed is int && d.score == d.completed*30-reviewed*27
           && d.completed >= 1 && d.completed <= 100000
           && d.elapsedMs is int && d.elapsedMs >= 1 && d.elapsedMs <= elapsed+1000
           && d.updatedAt == request.time
           && d.score <= elapsed*0.06
-          && (d.mode != 'sprint120' || (elapsed >= 120000 && elapsed <= 300000 && d.score <= 7200));
+          && (d.mode != 'sprint120' || (elapsed >= 120000 && elapsed <= 86400000 && d.elapsedMs >= 120000 && d.score <= 7200));
       }
       allow get: if request.auth != null;
       allow list: if request.auth != null && request.query.limit != null && request.query.limit <= 10;

@@ -35,8 +35,9 @@ export function concept(cat) {
 }
 export function sentence(cat) {
   const c=concept(cat);
-  return `${c.kind}가 ${c.direction==='높아진다'?'높아지면':'낮아지면'} 기체의 부피가 ${c.volume==='늘어난다'?'늘어나요':'줄어들어요'}.`;
+  return `${subject(c.kind)} ${c.direction==='높아진다'?'높아지면':'낮아지면'} 기체의 부피가 ${c.volume==='늘어난다'?'늘어나요':'줄어들어요'}.`;
 }
+export function subject(kind){return kind==='압력'?'압력이':'온도가';}
 export function explain(s) {
   const c=concept(s.cat);
   if(s.cat[0]==='T') return `${s.cat[1]==='U'?'따뜻해지는':'차가워지는'} 상황이에요. 온도가 ${c.direction==='높아진다'?'높아져요':'낮아져요'}.`;
@@ -47,6 +48,6 @@ export function question(stage,s,part=0) {
   const c=concept(s.cat);
   let type=stage===0?'kind':stage===1?'direction':stage===2?'volume':['kind','direction','volume'][part];
   const options=type==='kind'?['온도','압력']:type==='direction'?['높아진다','낮아진다']:['늘어난다','줄어든다'];
-  const prompt=type==='kind'?'무엇과 관련된 상황일까요?':type==='direction'?`${c.kind}가 어떻게 달라질까요?`:'기체의 부피는 어떻게 될까요?';
+  const prompt=type==='kind'?'무엇과 관련된 상황일까요?':type==='direction'?`${subject(c.kind)} 어떻게 달라질까요?`:'기체의 부피는 어떻게 될까요?';
   return {type,options,answer:c[type],prompt};
 }

@@ -22,12 +22,13 @@ export async function beginOnlineRun(mode,nonce){
   return {uid,nonce,mode};
 }
 export async function submitOnlineRun(online,result,nickname){
-  if(!online||result.completed<1||result.score!==result.completed*30||result.reason==='abandon'||(result.type==='sprint120'&&result.reason!=='time'))return {saved:false};
+  const reviewed=result.reviewed||0;
+  if(!online||result.completed<1||result.score!==result.completed*30-reviewed*27||result.reason==='abandon'||(result.type==='sprint120'&&result.reason!=='time'))return {saved:false};
   const {auth,db,dbSDK:f}=await connect();if(auth.currentUser.uid!==online.uid)throw Error('도전을 시작한 기기에서 기록을 올려 주세요.');
   const ref=f.doc(db,'gasQuizScores',`${online.mode}_${online.uid}`);
   return f.runTransaction(db,async tx=>{
     const old=await tx.get(ref);if(old.exists()&&old.data().score>=result.score)return {saved:false,best:old.data().score};
-    tx.set(ref,{uid:online.uid,mode:online.mode,nonce:online.nonce,nickname,score:result.score,completed:result.completed,elapsedMs:Math.max(1,Math.round(result.elapsed)),updatedAt:f.serverTimestamp()});return {saved:true,best:result.score};
+    tx.set(ref,{uid:online.uid,mode:online.mode,nonce:online.nonce,nickname,score:result.score,completed:result.completed,reviewed,elapsedMs:Math.max(1,Math.round(result.elapsed)),updatedAt:f.serverTimestamp()});return {saved:true,best:result.score};
   });
 }
 export async function fetchLeaderboard(mode){

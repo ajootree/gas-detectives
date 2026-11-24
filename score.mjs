@@ -1,4 +1,4 @@
-import {BANK,CATEGORIES} from './data.mjs';
+import {BANK,CATEGORIES} from './data.mjs?v=quiz-r2';
 export const KEY='gas-pang.cards.v1';
 export const MODES=['상황 구분','높아짐·낮아짐','부피 변화','연결하기'];
 export function fresh(){return {version:1,points:0,answers:0,solo:0,completed:0,mode:0,cycles:[0,0,0,0],seen:[],current:null,review:false,helped:false};}
@@ -12,11 +12,7 @@ export function restore(raw){
   s.review=!!s.current&&raw.review===true;s.helped=raw.helped===true||s.review;return s;
 }
 export function next(s,random=Math.random){
-  const n=s.cycles[s.mode];let category;
-  if((s.mode===1||s.mode===2)&&n<4)category=['TU','TD'][n%2];
-  else if((s.mode===1||s.mode===2)&&n<8)category=['PU','PD'][n%2];
-  else category=CATEGORIES[n%4];
-  let pool=BANK.filter(x=>x.cat===category&&!s.seen.includes(x.id));if(!pool.length)pool=BANK.filter(x=>x.cat===category);
+  let pool=BANK.filter(x=>!s.seen.includes(x.id));if(!pool.length)pool=BANK;
   const scenario=pool[Math.min(pool.length-1,Math.floor(random()*pool.length))];s.current={id:scenario.id,part:0};s.review=false;s.helped=false;s.seen.push(scenario.id);s.seen=s.seen.slice(-5);
 }
 export function complete(s,review=false){

@@ -1,8 +1,9 @@
-import {BANK,CATEGORIES,concept,sentence,explain,question} from './data.mjs';
-import {KEY,MODES,fresh,restore,next,complete} from './score.mjs';
-import {augment,activeRun,remaining,expired,startRun,runAnswer,reviewRun,endRun,PASS_SCORE,PASS_ACCURACY} from './challenge.mjs';
-import {ready as onlineReady,beginOnlineRun,submitOnlineRun,fetchLeaderboard} from './leaderboard.mjs';
+import {BANK,CATEGORIES,concept,sentence,explain,question,subject} from './data.mjs?v=quiz-r2';
+import {KEY,MODES,fresh,restore,next,complete} from './score.mjs?v=quiz-r2';
+import {augment,activeRun,remaining,expired,startRun,runAnswer,reviewRun,endRun,PASS_SCORE,PASS_ACCURACY} from './challenge.mjs?v=quiz-r2';
+import {ready as onlineReady,beginOnlineRun,submitOnlineRun,fetchLeaderboard} from './leaderboard.mjs?v=quiz-r2';
 const $=s=>document.querySelector(s),esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const emphasize=s=>esc(s).replace(/온도|압력/g,word=>`<strong class="concept-word ${word==='온도'?'concept-temperature':'concept-pressure'}">${word}</strong>`);
 let raw=null,storageOK=true;try{raw=JSON.parse(localStorage.getItem(KEY));}catch{try{localStorage.getItem(KEY);}catch{storageOK=false;}}
 let state=augment(restore(raw),raw||{}),shown=null,busy=false,dialog=null,dialogType='',transition=null,rankRequest=0;
 const uploads=new Set();
@@ -31,15 +32,15 @@ function render(){
   if(state.review)review();
 }
 function renderQuestion(){
-  const scenario=BANK.find(s=>s.id===state.current.id),q=question(state.mode,scenario,state.current.part);shown={scenario,q,mode:state.mode,part:state.current.part};const c=concept(scenario.cat),cycle=state.cycles[state.mode];
-  const context=activeRun(state)?state.run.type==='gate60'?'60초 동안 차근차근 풀어요':`완성한 문장 ${state.run.completed}개 · 단어 ${state.current.part+1}/3`:(state.mode===1||state.mode===2)?cycle<4?'온도부터 연습해요':cycle<8?'압력을 연습해요':'온도와 압력을 섞어서 연습해요':state.mode===3?`단어 ${state.current.part+1} / 3`:'상황을 읽고 알맞은 단어를 골라요';
-  const text=state.mode===2?`기체의 ${c.kind}가 ${c.direction==='높아진다'?'높아졌어요':'낮아졌어요'}.`:scenario.text;
-  $('#app').innerHTML=header()+`<section class="question-area"><div class="context">${context}</div><h1 class="scenario" id="scenario">${esc(text)}</h1>${state.mode===3?`<div class="chain" aria-label="연결 문장">${['kind','direction','volume'].map((k,i)=>`<span class="blank ${i<state.current.part?'filled':i===state.current.part?'current':''}">${i<state.current.part?c[k]:['온도 / 압력','변화 방향','기체의 부피'][i]}</span>`).join('<span aria-hidden="true">›</span>')}</div>`:''}<div class="prompt" id="question">${q.prompt}</div><div class="answers">${q.options.map((word,i)=>`<button class="answer" data-answer="${i}">${word}</button>`).join('')}</div><div class="feedback" id="feedback" aria-live="polite"></div></section>`;
+  const scenario=BANK.find(s=>s.id===state.current.id),q=question(state.mode,scenario,state.current.part);shown={scenario,q,mode:state.mode,part:state.current.part};const c=concept(scenario.cat);
+  const context=state.mode===3?`단어 ${state.current.part+1} / 3`:'';
+  const text=state.mode===2?`기체의 ${subject(c.kind)} ${c.direction==='높아진다'?'높아졌어요':'낮아졌어요'}.`:scenario.text;
+  $('#app').innerHTML=header()+`<section class="question-area">${context?`<div class="context">${context}</div>`:''}<h1 class="scenario" id="scenario">${emphasize(text)}</h1>${state.mode===3?`<div class="chain" aria-label="연결 문장">${['kind','direction','volume'].map((k,i)=>`<span class="blank ${i<state.current.part?'filled':i===state.current.part?'current':''}">${i<state.current.part?c[k]:['온도 / 압력','변화 방향','기체의 부피'][i]}</span>`).join('<span aria-hidden="true">›</span>')}</div>`:''}<div class="prompt" id="question">${emphasize(q.prompt)}</div><div class="answers">${q.options.map((word,i)=>`<button class="answer" data-answer="${i}">${word}</button>`).join('')}</div><div class="feedback" id="feedback" aria-live="polite"></div></section>`;
   document.querySelectorAll('[data-answer]').forEach(b=>b.onclick=()=>answer(Number(b.dataset.answer)));say(`${text} ${q.prompt} ${q.options.join(', ')}`);
 }
 function renderLobby(){
   const type=state.activity;
-  const info=type==='gate60'?`60초 동안 <strong>${PASS_SCORE}점 이상</strong>, <strong>정답률 ${PASS_ACCURACY*100}% 이상</strong>이면 다음 단계가 열려요.`:type==='marathon'?'첫 오답이 나올 때까지 이어서 풀어요. 세 단어를 모두 맞힌 연결 문장마다 <strong>30점</strong>을 받아요.':'120초 동안 연결 문장을 완성해요. 틀리지 않고 완성한 문장마다 <strong>30점</strong>을 받아요.';
+  const info=type==='gate60'?`60초 동안 <strong>${PASS_SCORE}점 이상</strong>, <strong>정답률 ${PASS_ACCURACY*100}% 이상</strong>이면 다음 단계가 열려요.`:type==='marathon'?'첫 오답이 나올 때까지 이어서 풀어요. 세 단어를 모두 맞힌 연결 문장마다 <strong>30점</strong>을 받아요.':'120초 동안 연결 문장을 완성해요. 완성한 문장은 <strong>30점</strong>, 복습한 문장은 <strong>3점</strong>을 받아요.';
   $('#app').innerHTML=header()+`<section class="question-area lobby"><div class="context">${state.mode+1}단계 · ${MODES[state.mode]}</div><h1 class="lobby-title">${kindName(type)}</h1><p class="lobby-info">${info}</p><div class="personal-best">이 기기 최고 기록 <strong>${best(type)}점</strong></div>${type!=='gate60'?`<div class="nickname">랭킹 별명 <strong id="nickname">${esc(state.nickname)}</strong><button class="small-button" id="new-nickname">다른 별명</button></div>`:''}<button class="primary start-button" id="start-run">${kindName(type)} 시작</button>${state.run?.ended?'<button class="small-button" id="show-result">지난 도전 결과</button>':''}</section>`;
   $('#start-run').onclick=begin;$('#new-nickname')?.addEventListener('click',()=>{state.nickname=nickname();save();$('#nickname').textContent=state.nickname;});$('#show-result')?.addEventListener('click',showResult);
 }
@@ -57,7 +58,7 @@ function answer(i){
   if(busy||dialog||!shown||(state.activity!=='practice'&&!activeRun(state)))return;
   if(state.activity==='practice'){if(shown.q.options[i]!==shown.q.answer){state.review=true;state.helped=true;save();review();return;}finishPractice(false);return;}
   const result=runAnswer(state,shown.q.options[i]===shown.q.answer,Date.now());save();
-  if(result.review){if(state.run.ended)upload();review();return;}
+  if(result.review){if(state.run.ended)upload();updateClock();review();return;}
   if(result.ended){finishChallenge('time');return;}success(result.gain,false);
 }
 function finishPractice(reviewed){const gain=complete(state,reviewed);save();success(gain,reviewed);}
@@ -69,7 +70,7 @@ function success(gain,reviewed){
   $('#feedback').textContent=message;say(message);clearTimeout(transition);transition=setTimeout(()=>{if(expired(state))finishChallenge('time');else render();},state.activity==='practice'?650:250);
 }
 function updateClock(){
-  const clock=$('#clock');if(clock&&state.run){const ms=remaining(state);clock.textContent=ms===null?`${Math.floor((Date.now()-state.run.startedAt)/1000)}초 진행`:`${Math.ceil(ms/1000)}초`;clock.classList.toggle('urgent',ms!==null&&ms<=10000);}
+  const clock=$('#clock');if(clock&&state.run){const ms=remaining(state);clock.textContent=ms===null?state.run.ended?'도전 종료':`${Math.floor((Date.now()-state.run.startedAt)/1000)}초 진행`:`${Math.ceil(ms/1000)}초`;clock.classList.toggle('urgent',ms!==null&&ms<=10000);clock.classList.toggle('paused',state.run.reviewStartedAt!==null);}
   if(expired(state))finishChallenge('time');
 }
 function finishChallenge(reason){
@@ -85,15 +86,15 @@ function open(content,type){
 }
 function close(){dialog?.remove();dialog=null;dialogType='';document.querySelector('.answer,#start-run')?.focus({preventScroll:true});}
 function review(){
-  const {scenario,q}=shown,c=concept(scenario.cat),explanation=q.type==='volume'?sentence(scenario.cat):explain(scenario),cue=q.type==='kind'?`${scenario.cat[0]==='T'?'따뜻하게 / 차갑게':'누르기 / 누르던 힘 줄이기'} → ${c.kind}`:q.type==='direction'?`${c.kind}가 ${c.direction==='높아진다'?'높아져요':'낮아져요'}`:`${c.kind} ${c.direction==='높아진다'?'높아짐':'낮아짐'} → 부피 ${c.volume==='늘어난다'?'늘어남':'줄어듦'}`;
-  open(`<h2 id="dialog-title">해설을 보고 다시 골라요.</h2><p class="review-scenario">${esc(scenario.text)}</p><div class="explanation"><p>${esc(explanation)}</p><strong>${esc(cue)}</strong></div><p class="review-prompt">${esc(q.prompt)}</p><div class="review-answers">${q.options.map((word,i)=>`<button class="review-answer" data-review="${i}" aria-label="복습 답: ${word}">${word}</button>`).join('')}</div><p class="review-note" id="review-note" role="status">${state.run?.ended?'도전은 끝났어요. 이 문제를 복습하면 결과를 볼 수 있어요.':'정답을 직접 다시 눌러야 다음으로 넘어가요.'}</p>`,'review');
-  document.querySelectorAll('[data-review]').forEach(b=>b.onclick=()=>{const i=Number(b.dataset.review);if(q.options[i]!==q.answer){b.classList.add('wrong');$('#review-note').textContent=`해설에서 ‘${q.answer}’를 다시 찾아보세요.`;return;}state.review=false;close();if(state.activity==='practice')finishPractice(true);else{const result=reviewRun(state,Date.now());save();if(result.ended)finishChallenge(state.run.reason||'time');else success(0,true);}});
+  const {scenario,q}=shown,c=concept(scenario.cat),explanation=q.type==='volume'?sentence(scenario.cat):explain(scenario),cue=q.type==='kind'?`${scenario.cat[0]==='T'?'따뜻하게 / 차갑게':'누르기 / 누르던 힘 줄이기'} → ${c.kind}`:q.type==='direction'?`${subject(c.kind)} ${c.direction==='높아진다'?'높아져요':'낮아져요'}`:`${c.kind} ${c.direction==='높아진다'?'높아짐':'낮아짐'} → 부피 ${c.volume==='늘어난다'?'늘어남':'줄어듦'}`;
+  open(`<h2 id="dialog-title">해설을 보고 다시 골라요.</h2><p class="review-scenario">${esc(scenario.text)}</p><div class="explanation"><p>${emphasize(explanation)}</p><strong>${emphasize(cue)}</strong></div><p class="review-prompt">${emphasize(q.prompt)}</p><div class="review-answers">${q.options.map((word,i)=>`<button class="review-answer" data-review="${i}" aria-label="복습 답: ${word}">${word}</button>`).join('')}</div><p class="review-note" id="review-note" role="status">${state.run?.ended?'도전은 끝났어요. 이 문제를 복습하면 결과를 볼 수 있어요.':'정답을 직접 다시 눌러야 다음으로 넘어가요.'}</p>`,'review');
+  document.querySelectorAll('[data-review]').forEach(b=>b.onclick=()=>{const i=Number(b.dataset.review);if(q.options[i]!==q.answer){b.classList.add('wrong');$('#review-note').textContent=`해설에서 ‘${q.answer}’를 다시 찾아보세요.`;return;}state.review=false;close();if(state.activity==='practice')finishPractice(true);else{const result=reviewRun(state,Date.now());save();if(result.ended)finishChallenge(state.run.reason||'time');else success(result.gain,true);}});
 }
 function showResult(){
   const r=state.run;if(!r?.ended)return;
   const title=r.type==='gate60'?r.passed?'다음 단계가 열렸어요!':'한 번 더 도전해 볼까요?':r.type==='marathon'?'마라톤 기록 완성!':r.reason==='quit'?'이번 도전을 멈췄어요':'120초 도전 완료!';
   const details=r.type==='gate60'?`${r.correct}문제 정답 / ${r.attempts}문제 · 정답률 ${Math.round((r.accuracy||0)*100)}%`:`연결 문장 ${r.completed}개 완성`;
-  open(`<h2 id="dialog-title">${title}</h2><div class="result-score">${r.score}<span>점</span></div><p class="result-detail">${details}</p><p class="subtle">${r.type==='gate60'?r.passed?`${r.stage+2}단계 ${MODES[r.stage+1]}를 연습할 수 있어요.`:`통과 기준은 100점·정답률 80%예요.${r.reason==='quit'?' 60초를 끝까지 풀어 주세요.':''}`:'완성하지 못한 문장과 틀린 문장은 점수에 넣지 않아요.'}</p>${r.type!=='gate60'?`<p class="subtle" id="upload-status">${uploadText()}</p>`:''}<div class="dialog-actions"><button class="small-button" id="back-practice">연습하기</button>${r.type!=='gate60'?'<button class="small-button" id="result-ranking">랭킹 보기</button>':''}<button class="primary" id="result-primary">${r.passed?'다음 단계로':'다시 도전'}</button></div>`,'result');
+  open(`<h2 id="dialog-title">${title}</h2><div class="result-score">${r.score}<span>점</span></div><p class="result-detail">${details}</p><p class="subtle">${r.type==='gate60'?r.passed?`${r.stage+2}단계 ${MODES[r.stage+1]}를 연습할 수 있어요.`:`통과 기준은 ${PASS_SCORE}점·정답률 ${PASS_ACCURACY*100}%예요.${r.reason==='quit'?' 60초를 끝까지 풀어 주세요.':''}`:r.type==='marathon'?'완성한 문장 30점':'완성한 문장 30점 · 복습해서 완성한 문장 3점'}</p>${r.type!=='gate60'?`<p class="subtle" id="upload-status">${uploadText()}</p>`:''}<div class="dialog-actions"><button class="small-button" id="back-practice">연습하기</button>${r.type!=='gate60'?'<button class="small-button" id="result-ranking">랭킹 보기</button>':''}<button class="primary" id="result-primary">${r.passed?'다음 단계로':'다시 도전'}</button></div>`,'result');
   $('#back-practice').onclick=()=>{close();state.activity='practice';state.run=null;next(state);save();render();};$('#result-primary').onclick=()=>{close();if(r.passed){state.mode=r.stage+1;state.activity='practice';state.run=null;next(state);}else state.run=null;save();render();};$('#result-ranking')?.addEventListener('click',()=>ranking(r.type));
 }
 function uploadText(){const r=state.run;if(r?.type==='sprint120'&&r.reason!=='time')return '120초를 끝까지 도전하면 최고 기록과 랭킹에 반영해요.';if(!r?.online)return '이 기기 최고 기록으로 저장했어요.';if(!r.completed)return '완성한 문장이 생기면 온라인 랭킹에 기록을 올려요.';return r.uploadStatus==='saved'?'온라인 랭킹에 기록을 저장했어요.':r.uploadStatus==='best'?'온라인에는 더 높은 기존 기록을 유지해요.':r.uploadStatus==='error'?'온라인에 저장하지 못했어요. 이 기기 최고 기록은 유지돼요.':'온라인 기록을 저장하고 있어요…';}
@@ -114,4 +115,3 @@ function reset(){
 document.addEventListener('keydown',e=>{if(e.target instanceof HTMLInputElement||busy)return;if(e.key==='1'||e.key==='2'){e.preventDefault();const i=Number(e.key)-1;if(dialogType==='review')document.querySelector(`[data-review="${i}"]`)?.click();else if(!dialog)answer(i);}});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)updateClock();});
 setInterval(updateClock,200);if(expired(state))endRun(state,'time',state.run.deadline);render();if(state.run?.ended&&!state.review){showResult();upload();}
-
