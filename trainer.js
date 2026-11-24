@@ -1,3 +1,4 @@
+import {fixedNickname} from './nicknames.mjs?v=quiz-r6';
 import {BANK,CATEGORIES,concept,sentence,explain,question,subject} from './data.mjs?v=quiz-r5';
 import {KEY,MODES,fresh,restore,next,complete} from './score.mjs?v=quiz-r5';
 import {augment,activeRun,remaining,expired,startRun,runAnswer,reviewRun,endRun,saveMarathon,suspendMarathon,resumeMarathon,PASS_SCORE,PASS_ACCURACY} from './challenge.mjs?v=quiz-r5';
@@ -8,8 +9,7 @@ let raw=null,storageOK=true;try{raw=JSON.parse(localStorage.getItem(KEY));}catch
 let state=augment(restore(raw),raw||{}),shown=null,busy=false,dialog=null,dialogType='',transition=null,rankRequest=0;
 let feedbackMessage='',feedbackUntil=0,feedbackTimer=null;
 const uploads=new Set();
-function nickname(){const a=['씩씩한','반짝이는','차분한','용감한','즐거운','꼼꼼한'],b=['수달','기린','고래','토끼','다람쥐','펭귄'];const n=crypto.getRandomValues(new Uint32Array(3));return a[n[0]%a.length]+b[n[1]%b.length]+String(n[2]%10000).padStart(4,'0');}
-if(!state.nickname)state.nickname=nickname();if(!state.current)next(state);
+state.nickname=fixedNickname(state.nickname);if(!state.current)next(state);
 if(state.run?.type==='marathon'&&!state.run.ended)suspendMarathon(state);
 if(!state.run&&raw?.mode!==state.mode){state.current.part=0;state.review=false;}
 function save(){
@@ -77,12 +77,12 @@ function renderLobby(){
   const type=state.activity;
   const saved=type==='marathon'?state.savedMarathon:null;
   const info=type==='gate60'?`<strong>${PASS_SCORE}점</strong> · <strong>정답률 ${PASS_ACCURACY*100}%</strong>면 다음 단계!`:type==='marathon'?'첫 오답에서 종료 · 문장 완성 <strong>30점</strong>':'문장 완성 <strong>30점</strong> · 복습 완성 <strong>3점</strong>';
-  $('#app').innerHTML=header()+`<section class="question-area lobby"><div class="context">${state.mode+1}단계 · ${MODES[state.mode]}</div><h1 class="lobby-title">${kindName(type)}</h1><p class="lobby-info">${info}</p><div class="personal-best">${saved?'저장한 기록':'이 기기 최고 기록'} <strong>${saved?saved.run.score:best(type)}점</strong>${saved?`<small class="saved-progress">문장 ${saved.run.completed}개 · 단어 ${saved.current.part+1}/3</small>`:''}</div>${type!=='gate60'?`<div class="nickname"><span class="nickname-label">랭킹 별명</span><strong id="nickname">${esc(state.nickname)}</strong><button class="small-button" id="new-nickname">다른 별명</button></div>`:''}<div class="lobby-actions"><button class="primary start-button" id="start-run">${saved?'이어서 하기':kindName(type)+' 시작'}</button>${saved?'<button class="small-button" id="new-marathon">처음부터</button>':''}</div>${state.run?.ended?'<button class="small-button" id="show-result">지난 도전 결과</button>':''}</section>`;
-  $('#start-run').onclick=saved?continueMarathon:begin;$('#new-marathon')?.addEventListener('click',newMarathon);$('#new-nickname')?.addEventListener('click',()=>{state.nickname=nickname();save();$('#nickname').textContent=state.nickname;});$('#show-result')?.addEventListener('click',showResult);
+  $('#app').innerHTML=header()+`<section class="question-area lobby"><div class="context">${state.mode+1}단계 · ${MODES[state.mode]}</div><h1 class="lobby-title">${kindName(type)}</h1><p class="lobby-info">${info}</p><div class="personal-best">${saved?'저장한 기록':'이 기기 최고 기록'} <strong>${saved?saved.run.score:best(type)}점</strong>${saved?`<small class="saved-progress">문장 ${saved.run.completed}개 · 단어 ${saved.current.part+1}/3</small>`:''}</div>${type!=='gate60'?`<div class="nickname"><span class="nickname-label">랭킹 별명</span><strong id="nickname">${esc(state.nickname)}</strong></div>`:''}<div class="lobby-actions"><button class="primary start-button" id="start-run">${saved?'이어서 하기':kindName(type)+' 시작'}</button>${saved?'<button class="small-button" id="new-marathon">처음부터</button>':''}</div>${state.run?.ended?'<button class="small-button" id="show-result">지난 도전 결과</button>':''}</section>`;
+  $('#start-run').onclick=saved?continueMarathon:begin;$('#new-marathon')?.addEventListener('click',newMarathon);$('#show-result')?.addEventListener('click',showResult);
 }
 async function begin(){
   if(busy)return;busy=true;const button=$('#start-run');button.disabled=true;button.textContent='시작 준비 중…';
-  document.querySelectorAll('.mode,.activity,#ranking,#help,#reset,#menu,#new-nickname,#new-marathon').forEach(b=>b.disabled=true);
+  document.querySelectorAll('.mode,.activity,#ranking,#help,#reset,#menu,#new-marathon').forEach(b=>b.disabled=true);
   const type=state.activity,id=crypto.randomUUID();let online=null;
   if(type!=='gate60'&&onlineReady()){
     try{online=await beginOnlineRun(type,id);}catch(error){busy=false;render();open(`<h2 id="dialog-title">랭킹에 연결하지 못했어요.</h2><p>연결을 확인하고 다시 시작하거나, 이 기기 기록으로 도전할 수 있어요.</p><div class="dialog-actions"><button class="small-button" id="cancel-start">돌아가기</button><button class="primary" id="offline-start">이 기기 기록으로 시작</button></div>`,'connection');$('#cancel-start').onclick=close;$('#offline-start').onclick=()=>{close();launch(type,id,null);};return;}
@@ -152,7 +152,7 @@ function menu(){
   $('#menu-ranking').onclick=()=>{close();ranking();};$('#menu-help')?.addEventListener('click',()=>{close();help();});$('#menu-reset').onclick=()=>{close();reset();};$('#close-menu').onclick=close;
 }
 function reset(){
-  if(activeRun(state))return;open(`<h2 id="dialog-title">이 기기 기록 초기화</h2><p>이 기기의 <strong>연습 점수, 열린 단계, 도전 최고 기록, 저장한 마라톤, 현재 문제와 별명</strong>을 초기화해요. 온라인 랭킹과 다른 게임의 기록은 유지돼요.</p><label for="reset-text">아래에 ‘초기화합니다’를 직접 입력해 주세요.</label><input id="reset-text" autocomplete="off" spellcheck="false" placeholder="초기화합니다"><div class="dialog-actions"><button class="small-button" id="cancel-reset">취소 · 기록 유지</button><button class="primary" id="confirm-reset" disabled>기록 초기화</button></div>`,'reset');$('#reset-text').oninput=e=>$('#confirm-reset').disabled=e.target.value!=='초기화합니다';$('#cancel-reset').onclick=close;$('#confirm-reset').onclick=()=>{if($('#reset-text').value!=='초기화합니다')return;try{localStorage.removeItem(KEY);}catch{storageOK=false;}state=augment(fresh());state.nickname=nickname();next(state);close();save();render();};
+  if(activeRun(state))return;open(`<h2 id="dialog-title">이 기기 기록 초기화</h2><p>이 기기의 <strong>연습 점수, 열린 단계, 도전 최고 기록, 저장한 마라톤, 현재 문제</strong>을 초기화해요. 별명과 온라인 랭킹, 다른 게임의 기록은 유지돼요.</p><label for="reset-text">아래에 ‘초기화합니다’를 직접 입력해 주세요.</label><input id="reset-text" autocomplete="off" spellcheck="false" placeholder="초기화합니다"><div class="dialog-actions"><button class="small-button" id="cancel-reset">취소 · 기록 유지</button><button class="primary" id="confirm-reset" disabled>기록 초기화</button></div>`,'reset');$('#reset-text').oninput=e=>$('#confirm-reset').disabled=e.target.value!=='초기화합니다';$('#cancel-reset').onclick=close;$('#confirm-reset').onclick=()=>{if($('#reset-text').value!=='초기화합니다')return;try{localStorage.removeItem(KEY);}catch{storageOK=false;}const keptNickname=state.nickname;state=augment(fresh());state.nickname=fixedNickname(keptNickname);next(state);close();save();render();};
 }
 document.addEventListener('keydown',e=>{if(e.target instanceof HTMLInputElement||busy)return;if(e.key==='1'||e.key==='2'){e.preventDefault();const i=Number(e.key)-1;if(dialogType==='review')document.querySelector(`[data-review="${i}"]`)?.click();else if(!dialog)answer(i);}});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)updateClock();});
