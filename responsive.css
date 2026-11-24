@@ -119,3 +119,13 @@ body{overflow:hidden}
 @media(min-width:480px) and (max-height:480px){#app{--screen-side:14px;--screen-top:8px;--screen-bottom:8px}}
 @media(min-width:480px) and (max-width:700px) and (max-height:480px){#app{--screen-top:6px;--screen-bottom:6px}}
 @media(max-height:359px){body{overflow:auto}#app{height:auto;min-height:100dvh}.question-area{min-height:260px}}
+
+/* A stable feedback slot: identical message and coordinates across question changes. */
+.question-area:not(.lobby){position:relative;padding-top:60px}
+.question-area:not(.lobby)>.feedback{position:absolute;top:3px;left:50%;transform:translateX(-50%);width:max-content;max-width:calc(100% - 8px);margin:0;grid-column:auto;grid-row:auto;z-index:1}
+@media(min-width:701px) and (max-height:720px),(min-width:480px) and (max-height:480px){
+  .question-area:not(.lobby){grid-template-rows:auto auto auto}.question-area:not(.lobby)>.scenario{grid-row:1}.question-area:not(.lobby)>.chain{grid-row:2}.question-area:not(.lobby)>.prompt{grid-row:3}.question-area:not(.lobby)>.answers{grid-row:1/4}
+}
+@media(max-width:700px){.question-area:not(.lobby){padding-top:56px}}
+@media(max-width:700px) and (max-height:640px){.question-area:not(.lobby){padding-top:48px}}
+@media(min-width:480px) and (max-height:480px){.question-area:not(.lobby){padding-top:44px}}

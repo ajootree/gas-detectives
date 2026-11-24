@@ -1,4 +1,4 @@
-import {BANK,pickScenario} from './data.mjs?v=quiz-r5';
+import {BANK,pickScenario} from './data.mjs?v=quiz-r7';
 export const PASS_SCORE=70;
 export const PASS_ACCURACY=.8;
 export const RUN_TYPES=['gate60','marathon','sprint120'];
@@ -24,7 +24,7 @@ function readMarathonSave(value){
   if(!value||value.run?.type!=='marathon'||value.run.ended||value.run.stage!==3||!Number.isFinite(value.run.startedAt)||!BANK.some(x=>x.id===value.current?.id)||![0,1,2].includes(value.current?.part))return null;
   const run=value.run;
   if(!Number.isInteger(run.completed)||run.completed<0||run.score!==run.completed*30)return null;
-  return {run:{...run,deadline:null,reviewStartedAt:null,pausedMs:0,reviewed:0},current:{...value.current},seen:Array.isArray(value.seen)?value.seen.filter(id=>BANK.some(x=>x.id===id)).slice(-5):[]};
+  return {run:{...run,deadline:null,reviewStartedAt:null,pausedMs:0,reviewed:0},current:{...value.current},seen:Array.isArray(value.seen)?value.seen.filter(id=>BANK.some(x=>x.id===id)).slice(-BANK.length):[]};
 }
 export function saveMarathon(s){
   if(s.run?.type!=='marathon'||s.run.ended)return false;
@@ -41,7 +41,7 @@ export function resumeMarathon(s){
 export function remaining(s,now=Date.now()){return !s.run||s.run.deadline===null?null:Math.max(0,s.run.deadline-(s.run.reviewStartedAt??now));}
 export function expired(s,now=Date.now()){return activeRun(s)&&s.run.deadline!==null&&s.run.reviewStartedAt==null&&now>=s.run.deadline;}
 export function pickRunQuestion(s,random=Math.random){
-  const entry=pickScenario(s.current?.id,s.seen,random);s.current={id:entry.id,part:0};s.seen.push(entry.id);s.seen=s.seen.slice(-5);s.review=false;s.helped=false;s.run.caseWrong=false;
+  const entry=pickScenario(s.current?.id,s.seen,random);s.current={id:entry.id,part:0};s.seen.push(entry.id);s.seen=s.seen.slice(-BANK.length);s.review=false;s.helped=false;s.run.caseWrong=false;
 }
 export function startRun(s,type,now=Date.now(),id=''){
   if(!RUN_TYPES.includes(type))throw Error('Invalid challenge');

@@ -1,4 +1,4 @@
-import {BANK,pickScenario} from './data.mjs?v=quiz-r5';
+import {BANK,pickScenario} from './data.mjs?v=quiz-r7';
 export const KEY='gas-pang.cards.v1';
 export const MODES=['상황 구분','높아짐·낮아짐','부피 변화','랭킹 도전'];
 export function fresh(){return {version:1,points:0,answers:0,solo:0,completed:0,mode:0,cycles:[0,0,0,0],seen:[],current:null,review:false,helped:false};}
@@ -7,12 +7,12 @@ export function restore(raw){
   for(const k of ['points','answers','solo','completed'])s[k]=Math.max(0,Math.floor(Number(raw[k])||0));
   s.mode=Number.isInteger(raw.mode)&&raw.mode>=0&&raw.mode<4?raw.mode:0;
   s.cycles=s.cycles.map((_,i)=>Math.max(0,Math.floor(Number(raw.cycles?.[i])||0)));
-  s.seen=Array.isArray(raw.seen)?raw.seen.filter(id=>BANK.some(x=>x.id===id)).slice(-5):[];
+  s.seen=Array.isArray(raw.seen)?raw.seen.filter(id=>BANK.some(x=>x.id===id)).slice(-BANK.length):[];
   if(raw.current&&BANK.some(x=>x.id===raw.current.id))s.current={id:raw.current.id,part:s.mode===3&&[0,1,2].includes(raw.current.part)?raw.current.part:0};
   s.review=!!s.current&&raw.review===true;s.helped=raw.helped===true||s.review;return s;
 }
 export function next(s,random=Math.random){
-  const scenario=pickScenario(s.current?.id,s.seen,random);s.current={id:scenario.id,part:0};s.review=false;s.helped=false;s.seen.push(scenario.id);s.seen=s.seen.slice(-5);
+  const scenario=pickScenario(s.current?.id,s.seen,random);s.current={id:scenario.id,part:0};s.review=false;s.helped=false;s.seen.push(scenario.id);s.seen=s.seen.slice(-BANK.length);
 }
 export function complete(s,review=false){
   const independent=!review&&!s.helped,gain=independent?10:5;s.points+=gain;s.answers++;if(independent)s.solo++;
