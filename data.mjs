@@ -27,6 +27,12 @@ export const BANK = [
   row('p11','PD','공기가 든 밀폐 봉지를 누르다가 손의 힘을 줄였어요.','snack','release'),
   row('p12','PD','운동화의 공기주머니를 누르던 발을 들어 누르는 힘을 줄였어요.','shoe','release'),
 ];
+export function pickScenario(previousId,seen=[],random=Math.random){
+  const previousCategory=BANK.find(s=>s.id===previousId)?.cat;
+  const allowed=BANK.filter(s=>s.cat!==previousCategory);
+  let pool=allowed.filter(s=>!seen.includes(s.id));if(!pool.length)pool=allowed;
+  return pool[Math.min(pool.length-1,Math.floor(random()*pool.length))];
+}
 export function concept(cat) {
   const kind = cat[0]==='T' ? '온도':'압력';
   const direction = cat[1]==='U' ? '높아진다':'낮아진다';

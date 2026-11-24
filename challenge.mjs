@@ -1,4 +1,4 @@
-import {BANK,CATEGORIES} from './data.mjs?v=quiz-r2';
+import {pickScenario} from './data.mjs?v=quiz-r3';
 export const PASS_SCORE=70;
 export const PASS_ACCURACY=.8;
 export const RUN_TYPES=['gate60','marathon','sprint120'];
@@ -22,8 +22,7 @@ export function activeRun(s){return !!s.run&&!s.run.ended;}
 export function remaining(s,now=Date.now()){return !s.run||s.run.deadline===null?null:Math.max(0,s.run.deadline-(s.run.reviewStartedAt??now));}
 export function expired(s,now=Date.now()){return activeRun(s)&&s.run.deadline!==null&&s.run.reviewStartedAt==null&&now>=s.run.deadline;}
 export function pickRunQuestion(s,random=Math.random){
-  let pool=BANK.filter(x=>!s.seen.includes(x.id));if(!pool.length)pool=BANK;
-  const entry=pool[Math.min(pool.length-1,Math.floor(random()*pool.length))];s.current={id:entry.id,part:0};s.seen.push(entry.id);s.seen=s.seen.slice(-5);s.review=false;s.helped=false;s.run.caseWrong=false;
+  const entry=pickScenario(s.current?.id,s.seen,random);s.current={id:entry.id,part:0};s.seen.push(entry.id);s.seen=s.seen.slice(-5);s.review=false;s.helped=false;s.run.caseWrong=false;
 }
 export function startRun(s,type,now=Date.now(),id=''){
   if(!RUN_TYPES.includes(type))throw Error('Invalid challenge');
